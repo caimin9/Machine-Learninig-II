@@ -49,12 +49,12 @@ summary(nno$fitted.values)
 #
 # We try again, this time normalizing the values
 # (50 is the max value for this data, see its range):
-
-###################1ST METHOD##################
+head(BostonHousing)
+summary(BostonHousing$medv)
 nno = nnet(medv/50~., data=BostonHousing, subset=itrain, size=5)
 summary(nno$fitted.values)
 plot(BostonHousing$medv[itrain]/50,nno$fitted.values,pch=20)
-abline(a=0,b=1,lwd=4)
+abline(a=0,b=1,lwd=4, col ='red')
 # there was thus a need to normalise the response variable...
 
 # test neural net
@@ -70,17 +70,16 @@ lm.preds = predict(lmo, newdata= BostonHousing[-itrain,])
 # RMSE:
 sqrt(mean((lm.preds-BostonHousing$medv[-itrain])^2))
 
-# and now applying all scalings correctly: 
-########################### (2nd METHOD) ################################
+# and now applying all scalings correctly:
 names(BostonHousing)
 head(BostonHousing)
 BH = BostonHousing[,-grep("medv",names(BostonHousing))]
 minmax.scale <- function(x){
 	return( (x-min(x))/max(x) )
 }
-fac = which(unlist(lapply(BH,class)) == "factor")
-BH[,-fac] = apply(BH[,-fac],2,minmax.scale)
-BH[,fac] = (as.numeric(BH[,fac])-1)
+fac = which(unlist(lapply(BH,class)) == "factor") #Finds the categorical variables
+BH[,-fac] = apply(BH[,-fac],2,minmax.scale) #2 here just means we apply the minmax.scale fnc column wise (helps dealing with exploding gradients)
+BH[,fac] = (as.numeric(BH[,fac])-1) #Turns them into binary 0 or 1, hence the -1
 BH$medv = BostonHousing$medv/50
 nno = nnet(medv~., data=BH, subset=itrain, size=5)
 summary(nno$fitted.values)
@@ -101,6 +100,9 @@ plot(BostonHousing$medv[itrain], lmo$residuals, pch=20, col=8)
 points(BostonHousing$medv[itrain], nno$residuals*50, pch=20)
 qqnorm(nno$residuals)
 abline(a=mean(nno$residuals), b=sd(nno$residuals), col=2)
+
+
+
 
 
 """
