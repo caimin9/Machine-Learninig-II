@@ -49,6 +49,8 @@ summary(nno$fitted.values)
 #
 # We try again, this time normalizing the values
 # (50 is the max value for this data, see its range):
+
+###################1ST METHOD##################
 nno = nnet(medv/50~., data=BostonHousing, subset=itrain, size=5)
 summary(nno$fitted.values)
 plot(BostonHousing$medv[itrain]/50,nno$fitted.values,pch=20)
@@ -68,7 +70,8 @@ lm.preds = predict(lmo, newdata= BostonHousing[-itrain,])
 # RMSE:
 sqrt(mean((lm.preds-BostonHousing$medv[-itrain])^2))
 
-# and now applying all scalings correctly:
+# and now applying all scalings correctly: 
+########################### (2nd METHOD) ################################
 names(BostonHousing)
 head(BostonHousing)
 BH = BostonHousing[,-grep("medv",names(BostonHousing))]
@@ -98,6 +101,32 @@ plot(BostonHousing$medv[itrain], lmo$residuals, pch=20, col=8)
 points(BostonHousing$medv[itrain], nno$residuals*50, pch=20)
 qqnorm(nno$residuals)
 abline(a=mean(nno$residuals), b=sd(nno$residuals), col=2)
+
+
+"""
+Key Differences
+Aspect						Method 1				Method 2
+Input features					Unscaled				All inputs scaled to [0,1]
+Factor treatment				Handled by nnet internally		Explicitly converted to 0/1
+Target scaling					Yes					Yes
+Risk of exploding/vanishing gradients		Higher					Lower
+Training convergence				May fail or converge poorly		More stable
+RMSE (test)					Usually worse				Usually better
+
+
+Why does this matter?
+Neural networks — especially shallow ones like those in nnet — are sensitive to scale. If input features vary widely (e.g. rm ranges 3–8, tax ranges 200–700), then:
+Gradients can explode or vanish.
+Weight updates become erratic.
+It becomes harder to converge on a good solution.
+
+Scaling all features ensures that:
+The model can learn smoother gradient steps.
+Each feature contributes roughly equally during training.
+
+Factor encoding also matters: nnet will internally one-hot encode factors, but if you convert them manually to numeric, you control exactly how they're used. 
+In this case chas is binary anyway, so both approaches work — but it's safer and clearer to do it explicitly
+"""
 
 # ------------------------------------------------------------
 # Example 3: effect of tuning parameters (iris data)
