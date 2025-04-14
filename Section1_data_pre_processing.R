@@ -181,8 +181,92 @@ sd(s2)
 ###############################################################
 ### Exercise 4: resampling
 ###############################################################
+########################
+###### Exercise 4 ######
+########################
+# Load dataset and inspect
+data(trees)
+?trees
 
-# You don't need help for this one!
+# Set seed for cross-validation procedure
+set.seed(4060)
+k = 10
+n = nrow(trees)
+
+# Create folds for disjoint splits
+folds = sample(rep(1:k, length.out = n)) #each data point is assigned a fold
+
+# Vectors to store slope estimates (beta coefficient)
+betas = numeric(k)
+
+# 1. 10-fold CV on the original dataset
+for(i in 1:k){
+  test_ind = which(folds == i)
+  train_data = trees[-test_ind, ]
+  # Fit linear model on the training set
+  my_model = lm(Height ~ Girth, data = train_data)
+  # Store the slope (coefficient for Girth)
+  betas[i] = my_model$coefficients[2]
+}
+
+cv_slope_estimate = mean(betas)
+cat("Cross-validated slope estimate (original):", cv_slope_estimate, "\n")
+
+# 2. 10-fold CV on the randomised dataset
+# First, shuffle the dataset as instructed
+set.seed(1)
+data_new = trees[sample(1:n), ]
+
+# Create disjoint folds for the shuffled dataset as well (we can re-use the same folds or generate new ones)
+# Here we generate new folds:
+folds_shuffle = sample(rep(1:k, length.out = n))
+
+betas_shuffle = numeric(k)
+for(i in 1:k){
+  test_ind = which(folds_shuffle == i)
+  train_data = data_new[-test_ind, ]
+  shuffle_model = lm(Height ~ Girth, data = train_data)
+  betas_shuffle[i] = shuffle_model$coefficients[2]
+}
+
+cv_slope_estimate_shuffle = mean(betas_shuffle)
+cat("Cross-validated slope estimate (shuffled):", cv_slope_estimate_shuffle, "\n")
+
+# 3. Compare sampling distributions using boxplots
+par(mfrow = c(1,2), mar = c(3,3,3,2))
+boxplot(betas, betas_shuffle, 
+        names = c("Beta (Original)", "Beta (Shuffled)"),
+        main = "Distribution of Slope Estimates")
+
+par(mfrow = c(1,1))
+
+
+## Perform two-sided t-test
+t_test = t.test(betas, betas_shuffle, alternative = "two.sided")
+F_test = var.test(betas, betas_shuffle,alternative =  "two.sided")
+
+t_test
+F_test
+
+#p-value very high --> no statistical significance
+
+#F-test
+#The point estimate of the variance ratio is 2.2154;
+#however, the p-value of 0.2517 indicates that this difference is not 
+#statistically significant at conventional levels. 
+#The wide confidence interval (ranging from about 0.55 to 8.92) tells us 
+#that there is substantial uncertainty about the true ratio of variances. 
+#In other words, even though the point estimate is greater than 1, 
+#the data do not provide strong evidence that the variances of the slope estimates are different
+
+
+#t-test
+#The extremely high p-value (0.9972) indicates that there is virtually no difference in the means of 
+#the two distributions. 
+#The confidence interval for the difference in means includes 0 and is very tight, suggesting that 
+#the average slope estimates are essentially identical whether you 
+#use the original or the shuffled dataset for cross-validation.
+
 
 ###############################################################
 ### Exercise 5: resampling (CV vs bootstrapping)
@@ -275,7 +359,7 @@ for(r in 1:R){
 	for(k in 1:K){
 		i = which(folds==k)
 		df = data.frame(x=xr[-i],y=yr[-i]) # train data
-		dft = data.frame(x=xr[i],y=yr[i]) # test data
+		dft = data.frame(x=xr[i],y=yr[i]) #Â test data
 		lmo = lm(y~.,data=df)
 		yp = predict(lmo,newdata=dft)
 		rmse = (sqrt(mean((yp-yr[i])^2)))
@@ -292,7 +376,7 @@ for(r in 1:R){
 	xr = x[i]
 	yr = y[i]
 	df = data.frame(x=xr[i],y=yr[i]) # train data
-	dft = data.frame(x=xr[-i],y=yr[-i]) # test data (OOB)
+	dft = data.frame(x=xr[-i],y=yr[-i]) #Â test data (OOB)
 	lmo = lm(y~.,data=df)
 	yp = predict(lmo,newdata=dft)
 	rmse = (sqrt(mean((yp-yr[-i])^2)))
