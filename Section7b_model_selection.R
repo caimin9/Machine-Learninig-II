@@ -222,3 +222,28 @@ sqrt(mean((pred - dat$Salary[-itrain])^2))
 
 # much easier than regsubsets() on this front...
 
+
+
+
+#########################################################################################################################
+### PROS AND CONS OF BACKWARD AND FORWARD STEPWISE SELECTION
+#########################################################################################################################
+Pros: Starts from the empty model and adds the most promising variable at each step. 
+Works well when you have far more predictors than observations, since you never fit the full model.
+Computationally cheaper if p is large, because you only ever consider adding one variable at a time.
+
+Cons: Once a variable is included, it can never be dropped later, so you can get stuck if an early choice was a false lead. 
+It can miss combinations of predictors that only work well together, because it doesn’t revisit earlier decisions.
+
+Backward Elimination
+Pros: Starts with the full model, so every predictor is considered in the context of all others. 
+Can detect that two variables jointly matter even if neither looks good alone. 
+At each step you remove the weakest variable, so you can correct for over‑inclusion.
+
+Cons: Requires that you can fit the full model. If p approaches or exceeds n, you may run into singularities or extreme variance. 
+Computationally heavier when p is large, because you’re fitting the big model and then every one‑variable‑down model at each step.
+
+Which is better? 
+If p is small and n is large, backward elimination often gives a more thorough search around the full space. 
+If p is large and n is limited, forward selection is more robust and sometimes the only feasible choice.
+A mixed (stepwise) approach, which allows both additions and removals at each step, often outperforms pure forward or pure backward methods.
