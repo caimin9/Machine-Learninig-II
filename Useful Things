@@ -63,10 +63,13 @@ CS$High = as.numeric(CS$High == 'Yes')
 #Makes it into factors (Yes, No) --> Classification Problems
 CS$High = as.factor(CS$High)
 
-#######################################################
-######## KNN ROC ANALYSIS ALTERATION
-#######################################################
 
+#######################################################
+######## MOST IMPORTANT VARIABLES
+#######################################################
+# If needed, top 5 variables by MeanDecreaseGini:
+imp.rf <- importance(rf.fit, type = 2)
+head(sort(imp.rf[,1], decreasing = TRUE), 5)
 
 
 #######################################################
@@ -88,3 +91,15 @@ These are greedy algorithms though so
 Could use entropy as a loss function to reduce bias
 Could also use gradient boosting to cope with this problem
 
+
+
+#######################################################
+######## KNN ROC ANALYSIS ALTERATION
+#######################################################
+
+
+
+
+#######################################################
+######## SVM SLACK VARIABLES
+#######################################################
