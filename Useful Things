@@ -1,4 +1,16 @@
 #######################################################
+######## Regression or Classification?
+#######################################################
+Regression:
+This is a regression problem because the target variable is continuous, representing a numeric quantity that can take any value within a range. 
+The objective is to predict this numeric value based on the input features.
+Classification:
+This is a classification problem because the target variable consists of discrete categories or classes. 
+The objective is to assign each observation to the correct category based on the input features.
+
+
+
+#######################################################
 ######## Correlation Filter
 #######################################################
 
