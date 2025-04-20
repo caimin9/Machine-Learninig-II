@@ -28,7 +28,7 @@ gb.out = gbm(High~., data=CS,
              interaction.depth=1) # depth of the trees, 1 = stumps
 ### USing caret
 my_gbm = train(High~., data = dat.train, method = 'gbm')
-
+gbm_fitted = predict(my_gbm) #To get fitted values
 #######################################################
 ######## Neural Network Scaling
 #######################################################
