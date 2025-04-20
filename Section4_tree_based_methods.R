@@ -351,8 +351,8 @@ summary(gb.out$train.error)
 # inspect output:
 par(mar=c(4.5,6,1,1))
 summary(gb.out, las=1)
-plot(gb.out, i="Price")
-plot(gb.out, i="ShelveLoc")
+plot(gb.out, i="Price") #Shows how Price effects High
+plot(gb.out, i="ShelveLoc") #Shows how ShelveLoc effects High
 
 gb.p = predict(gb.out, newdata=CS.test, n.trees=5000)
 gb.p
