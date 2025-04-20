@@ -20,9 +20,12 @@ bag.tree = randomForest(High~.,data = CS,subset = index, mtry = P) #BAGGED TREE 
 prune_tree = cv.tree(my_tree, FUN = prune.misclass) 
 opt_pt = prune.misclass(my_tree, best = opt_size)
 ######### RF #########
-rf = randomForest(High~., data = CS)
+rf.out = randomForest(High~., CS, ntree=5000) #A random forest fitted usng 5000 trees
 ######### GBM #########
-my_gbm = gbm(High~.,data = CS[index,],distribution = 'bernoulli', n.trees = 5000) 
+gb.out = gbm(High~., data=CS, 
+             distribution="bernoulli", # use "gaussian" instead for regression
+             n.trees=5000, # size of the ensemble
+             interaction.depth=1) # depth of the trees, 1 = stumps
 
 
 
