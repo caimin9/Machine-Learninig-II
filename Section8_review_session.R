@@ -133,7 +133,8 @@ rownames(rfo$importance)[is]
 # hist(rfo$importance[is])
 # barplot((rfo$importance[is,]), las=2)
 
-gb.out = gbm(ytrain~., data=as.data.frame(xtrain), distribution='multinomial')
+#USe multinomial because we have a multinomial problem. We use bernoulli for binary and gaussian for regression, or poisson, laplace, quantile etc
+gb.out = gbm(ytrain~., data=as.data.frame(xtrain), distribution='multinomial') 
 gb.fitted = predict(gb.out, n.trees=gb.out$n.trees) 
 gb.pred = predict(gb.out, as.data.frame(xtest), n.trees=gb.out$n.trees)
 gbp = apply(gb.pred,1,which.max)
