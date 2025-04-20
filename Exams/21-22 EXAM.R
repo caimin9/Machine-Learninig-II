@@ -25,8 +25,10 @@
 # i think this is a random forest
 
 #d)
-# random forest from part c would decorrelate our trees by only choosing a subset of m = 2 predictors at
-# each split. This would prevent overfitting
+# Random Forets typically outperforms bagging by reducing the correlation between individual trees(m-try ranodm subset at each split) which often yields an 
+# overall lower variance and better generalisation
+# Bagging uses all predictors at every split, which can leave trees highly correlated and thus sometimes less effective at reducing variance, even though
+# it can have low bias.
 
 
 
