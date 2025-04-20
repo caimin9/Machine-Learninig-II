@@ -33,6 +33,9 @@ gbm_fitted = predict(my_gbm) #To get fitted values
 ######## Neural Network Scaling
 #######################################################
 
+#minmax scaling
+minmax_scale = function (x) {
+return (( x - min (x) ) / ( max (x) - min( x))) }
 
 
 
@@ -51,3 +54,25 @@ CS$High = as.factor(CS$High)
 #######################################################
 ######## KNN ROC ANALYSIS ALTERATION
 #######################################################
+
+
+
+#######################################################
+######## How tree methods choose their nodes
+#######################################################
+The algorithm searches over every possible feature and every possible cut point and picks the one that maximises the drop in impurity 
+or equivalently minimises the drop in RSS
+
+For bagging and trees both look at all features whereas random forests look at a subset of features
+- Regression problems we look at RSS
+- Classification we look at maximising the gini coefficinet index
+
+
+These are greedy algorithms though so
+- Local Optima: We may miss a better global structure by committing too early
+- Variable Selection Bias: RSS & Gini tends to favour variables with many possible split points
+- Axis-aligned Splits only: Interactions between features can be missed
+
+Could use entropy as a loss function to reduce bias
+Could also use gradient boosting to cope with this problem
+
