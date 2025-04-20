@@ -1,0 +1,7 @@
+#How to use predict with different models
+
+#SVMS
+svl_preds = predict(svm_lin, newdata = x.test)
+#if want the auc have to fit the model again with probability = True
+lin = svm(x.train,y.train , kernel = 'linear', probability = T) 
+lin_preds = predict(svm_lin, newdata = x.test,probability = T)
