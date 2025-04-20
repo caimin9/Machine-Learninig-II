@@ -39,9 +39,11 @@ my_gbm = gbm(High~.,data = CS[index,],distribution = 'bernoulli', n.trees = 5000
 #######################################################
 ######## Recode Levels
 #######################################################
-# So must recode levels
+# Makes it binary (1,0) --> Regression Problems & GBM with Bernoulli distribution
 CS$High = as.numeric(CS$High == 'Yes')
 
+#Makes it into factors (Yes, No) --> Classification Problems
+CS$High = as.factor(CS$High)
 
 #######################################################
 ######## KNN ROC ANALYSIS ALTERATION
