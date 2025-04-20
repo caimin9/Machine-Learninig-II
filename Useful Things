@@ -12,10 +12,17 @@
 #######################################################
 ######## Fitting RF, GBM, Tree, Pruned Tree
 #######################################################
-
-
-
-
+######### TREE #########
+my_tree = tree(High~.,data = CS, subset = index) 
+######### BAGGED TREE #########
+bag.tree = randomForest(High~.,data = CS,subset = index, mtry = P) #BAGGED TREE (SINCE MTRY = #OF PREDICTORS)
+######### PRUNED TREE #########
+prune_tree = cv.tree(my_tree, FUN = prune.misclass) 
+opt_pt = prune.misclass(my_tree, best = opt_size)
+######### RF #########
+rf = randomForest(High~., data = CS)
+######### GBM #########
+my_gbm = gbm(High~.,data = CS[index,],distribution = 'bernoulli', n.trees = 5000) 
 
 
 
