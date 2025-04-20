@@ -26,8 +26,8 @@ gb.out = gbm(High~., data=CS,
              distribution="bernoulli", # use "gaussian" instead for regression
              n.trees=5000, # size of the ensemble
              interaction.depth=1) # depth of the trees, 1 = stumps
-
-
+### USing caret
+my_gbm = train(High~., data = dat.train, method = 'gbm')
 
 #######################################################
 ######## Neural Network Scaling
