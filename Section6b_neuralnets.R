@@ -370,116 +370,131 @@ print(results)
 ### Exercise 6: Olden index
 ###############################################################
 
-rm(list=ls())
+rm(list=ls()) # Clear all objects from the environment
 
-library(nnet)
-library(NeuralNetTools)
-library(randomForest)
-library(MASS)
+# Load required libraries
+library(nnet)      # For neural network implementation
+library(NeuralNetTools)  # For neural network analysis including Olden's method
+library(randomForest)    # For random forest implementation
+library(MASS)      # Contains datasets including Boston
 
+# Custom function to scale variables to [0,1] range
+# This normalization helps neural networks train better
 myscale <- function(x){
-	minx = min(x,na.rm=TRUE)
-	maxx = max(x,na.rm=TRUE)
-	return((x-minx)/(maxx-minx))
+	minx = min(x,na.rm=TRUE)  # Find minimum value, ignoring NA values
+	maxx = max(x,na.rm=TRUE)  # Find maximum value, ignoring NA values
+	return((x-minx)/(maxx-minx))  # Scale values to range [0,1]
 }
 
-# (1) Iris data
+# (1) Iris data - Classification example
 
-# shuffle dataset...
-set.seed(4061)
-n = nrow(iris)
-dat = iris[sample(1:n),]
+# Randomize dataset order to avoid systematic bias
+set.seed(4061)  # Set random seed for reproducibility
+n = nrow(iris)  # Get number of rows in iris dataset
+dat = iris[sample(1:n),]  # Randomly shuffle the data
 
-# rescale predictors...
-dat[,1:4] = myscale(dat[,1:4])
+# Normalize predictors to [0,1] range to improve neural network training
+dat[,1:4] = myscale(dat[,1:4])  # Scale only the numeric predictor columns
 
-# fit Feed-Forward Neural Network...
-set.seed(4061)
-nno = nnet(Species~., data=dat, size=c(7), 
-	linout=FALSE, entropy=TRUE)
-pis = nno$fitted.values
-matplot(pis, col=c(1,2,4), pch=20)
-y.hat = apply(pis, 1, which.max) # fitted values
-table(y.hat, dat$Species)
+# Fit a Feed-Forward Neural Network with nnet
+set.seed(4061)  # Set seed again for reproducible network initialization
+nno = nnet(Species~., data=dat, size=c(7),  # Species is target, '.' means use all other variables as predictors
+	linout=FALSE,  # FALSE because this is a classification problem, not regression
+	entropy=TRUE)  # Use cross-entropy error function for classification
+pis = nno$fitted.values  # Extract predicted probabilities for each class
+matplot(pis, col=c(1,2,4), pch=20)  # Plot predictions with different colors by class
+y.hat = apply(pis, 1, which.max)  # Convert probabilities to class predictions by taking highest probability
+table(y.hat, dat$Species)  # Create confusion matrix to assess accuracy
 
-# compute variable importance...
-vimp.setosa = olden(nno, out_var='setosa', bar_plot=FALSE)
-vimp.virginica = olden(nno, out_var='virginica', bar_plot=FALSE)
-vimp.versicolor = olden(nno, out_var='versicolor', bar_plot=FALSE)
-names(vimp.setosa)
+# Compute variable importance using Olden's method for each output class
+# Olden method calculates how much each input contributes to final prediction
+vimp.setosa = olden(nno, out_var='setosa', bar_plot=FALSE)  # Importance for setosa class
+vimp.virginica = olden(nno, out_var='virginica', bar_plot=FALSE)  # Importance for virginica class
+vimp.versicolor = olden(nno, out_var='versicolor', bar_plot=FALSE)  # Importance for versicolor class
+names(vimp.setosa)  # Show what information is returned by olden function
+
+# Create two side-by-side plots to visualize class separation
 par(mfrow=c(1,2))
-plot(iris[,3:4], pch=20, col=c(1,2,4)[iris$Species], cex=2)
-plot(iris[,c(1,3)], pch=20, col=c(1,2,4)[iris$Species], cex=2)
+plot(iris[,3:4], pch=20, col=c(1,2,4)[iris$Species], cex=2)  # Plot petal length vs petal width
+plot(iris[,c(1,3)], pch=20, col=c(1,2,4)[iris$Species], cex=2)  # Plot sepal length vs petal length
+
+# Create new window and display variable importance plots for each class
 dev.new()
-plot(olden(nno, out_var='setosa'))
-plot(olden(nno, out_var='virginica'))
-plot(olden(nno, out_var='versicolor'))
+plot(olden(nno, out_var='setosa'))  # Plot importance for setosa
+plot(olden(nno, out_var='virginica'))  # Plot importance for virginica
+plot(olden(nno, out_var='versicolor'))  # Plot importance for versicolor
+
+# Combine importance values into one matrix for comparison
 v.imp = cbind(vimp.setosa$importance, vimp.virginica$importance, vimp.versicolor$importance)
-rownames(v.imp) = names(dat)[1:4]
-colnames(v.imp) = levels(dat$Species)
-(v.imp)
+rownames(v.imp) = names(dat)[1:4]  # Set row names to feature names
+colnames(v.imp) = levels(dat$Species)  # Set column names to class names
+(v.imp)  # Display the importance matrix
 
-# fit RF...
+# Fit Random Forest for comparison of variable importance measures
 set.seed(4061)
-rfo = randomForest(Species~., data=dat, ntrees=1000)
-rfo$importance
+rfo = randomForest(Species~., data=dat, ntrees=1000)  # 1000 trees for stable importance estimates
+rfo$importance  # Display importance from random forest (mean decrease in Gini index)
 
-# how can we compare variable importance assessments?
-cbind(apply(v.imp, 1, sum), 
-	apply(abs(v.imp), 1, sum), 
-	rfo$importance)
+# Compare variable importance from NN and RF
+# Sum across classes for NN to get overall importance
+cbind(apply(v.imp, 1, sum),  # Raw sum across classes
+	apply(abs(v.imp), 1, sum),  # Sum of absolute values (accounts for negative importance)
+	rfo$importance)  # Random Forest importance for comparison
 
-# (2) Boston data
+# (2) Boston data - Regression example
 
+set.seed(4061)  
+n = nrow(Boston) 
+dat = Boston[sample(1:n),]  # Randomly shuffle the data
+
+# Normalize all variables including response
+dats = myscale(dat)  # Scale all variables to [0,1]
+dats$medv = dat$medv/50  # Scale response differently - divide by 50 instead
+
+# Fit neural network for regression
 set.seed(4061)
-n = nrow(Boston)
-dat = Boston[sample(1:n),]
+nno = nnet(medv~., data=dats, size=7, linout=1)  # linout=1 for regression (linear output)
+y.hat = nno$fitted.values  # Get predicted values
+plot(y.hat*50, dat$medv)  # Plot predictions vs actual (unscaled)
+mean((y.hat*50-dat$medv)^2)  # Calculate MSE (Mean Squared Error)
 
-# rescale predictors...
-dats = myscale(dat)
-dats$medv = dat$medv/50
-
-set.seed(4061)
-nno = nnet(medv~., data=dats, size=7, linout=1)
-y.hat = nno$fitted.values
-plot(y.hat*50, dat$medv)
-mean((y.hat*50-dat$medv)^2)
-
+# Calculate variable importance with Olden's method for regression
 v.imp = olden(nno, bar_plot=FALSE)
-plot(v.imp)
+plot(v.imp)  # Plot importance values
 
-# fit RF...
+# Fit Random Forest for regression
 set.seed(4061)
 rfo = randomForest(medv~., data=dat, ntrees=1000)
-rfo$importance
+rfo$importance  # Show importance from random forest (% increase in MSE)
 
-# how can we compare variable importance assessments?
-cbind(v.imp, rfo$importance)
+# Compare variable importance between methods
+cbind(v.imp, rfo$importance)  # Raw values side by side
+# Normalized importance values (as percentages)
 round(cbind(v.imp/sum(abs(v.imp)), 
 		rfo$importance/sum(rfo$importance)),3)*100
 
-# should we use absolute values of Olden's index?
-par(mfrow=c(2,1))
-barplot(abs(v.imp[,1]), main="importance from NN", 
-	names=rownames(v.imp), las=2)
+# Visualize importance from both methods using absolute values
+par(mfrow=c(2,1))  # 2 plots vertically
+barplot(abs(v.imp[,1]), main="importance from NN",  # Use abs values for NN
+	names=rownames(v.imp), las=2)  # Horizontal labels
 barplot(rfo$importance[,1], main="importance from RF", 
 	names=rownames(v.imp), las=2)
 	
-# or possibly normalize across all values for proportional contribution?
+# Alternative visualization: normalized importance (proportional contribution)
 par(mfrow=c(2,1))
-NNN = sum(abs(v.imp[,1]))
-NRF = sum(abs(rfo$importance[,1]))
-barplot(abs(v.imp[,1])/NNN, main="importance from NN", 
+NNN = sum(abs(v.imp[,1]))  # Sum of absolute NN importance
+NRF = sum(abs(rfo$importance[,1]))  # Sum of RF importance
+barplot(abs(v.imp[,1])/NNN, main="importance from NN",  # Normalize to sum to 1
 	names=rownames(v.imp), las=2)
 barplot(rfo$importance[,1]/NRF, main="importance from RF", 
 	names=rownames(v.imp), las=2)
 
-# looks alright... now make it a nicer comparative plot :)
-par(font=2, font.axis=2)
-imps = rbind(NN=abs(v.imp[,1])/NNN, RF=rfo$importance[,1]/NRF)
-cols = c('cyan','pink')
-barplot(imps, names=colnames(imps), las=2, beside=TRUE, 
+# Final comparison plot showing both methods together
+par(font=2, font.axis=2)  # Set bold fonts
+imps = rbind(NN=abs(v.imp[,1])/NNN, RF=rfo$importance[,1]/NRF)  # Combine normalized importance
+cols = c('cyan','pink')  # Colors for bars
+barplot(imps, names=colnames(imps), las=2, beside=TRUE,  # Side-by-side bar plot 
 	col=cols,
 	ylab="relative importance (%)",
 	main="Variable importance from NN and RF")
-legend("topleft", legend=c('NN','RF'), col=cols, bty='n', pch=15)
+legend("topleft", legend=c('NN','RF'), col=cols, bty='n', pch=15)  # Add legend
