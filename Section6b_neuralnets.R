@@ -10,6 +10,12 @@
 # when T output layer uses a linear activation function
 # T for Regression , F for classification
 
+## rep = 5 -->
+#Trains 5 separate neural networks with different random initializations
+#Each network starts with different random weights
+#The algorithm then selects the best performing network (lowest error)
+#Helps avoid poor local minima that a single training run might get stuck in
+#Improves model stability but increases training time
 ###############################################################
 ### Exercise 1
 ###############################################################
