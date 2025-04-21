@@ -6,6 +6,10 @@
 # Exercises Section 6: Neural Networks
 # --------------------------------------------------------
 
+# when linear.output = F output layer uses same activation as input layer
+# when T output layer uses a linear activation function
+# T for Regression , F for classification
+
 ###############################################################
 ### Exercise 1
 ###############################################################
