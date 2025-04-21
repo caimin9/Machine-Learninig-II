@@ -161,6 +161,7 @@ nno = nnet(Salary~., data=dat.train, size=10, decay=c(0.1))
 summary(nno$fitted.values)
 
 set.seed(4061)
+# 0 decay means no regularisation. As decay increases so does regularisation
 nno.s = nnet(Salary~., data=dats.train, size=10, decay=c(0))
 summary(nno.s$fitted.values)
 
