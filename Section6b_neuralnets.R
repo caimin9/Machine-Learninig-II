@@ -229,6 +229,142 @@ pred.ss = predict(nno.ss, newdata=datss.test)
 mean((dats.test$Salary-pred.s)^2)
 mean((datss.test$Salary-pred.ss)^2)
 
+
+
+###############################################################
+### Exercise 5: neural networks using caret
+###############################################################
+
+rm(list=ls())
+
+library(caret)
+library(neuralnet)
+library(nnet)
+library(ISLR)
+library(mlbench)
+
+# Set up the data (same as Exercise 4)
+dat = na.omit(Hitters) 
+n = nrow(dat)
+NC = ncol(dat)
+
+# Prepare scaled data for better training
+myrecode <- function(x) {
+  if(is.factor(x)) {
+    return(as.numeric(x)) 
+  } else {
+    return(x)
+  }
+}
+
+myscale <- function(x) {
+  minx = min(x, na.rm=TRUE)
+  maxx = max(x, na.rm=TRUE)
+  return((x-minx)/(maxx-minx))
+}
+
+datss = data.frame(lapply(dat, myrecode))
+datss = data.frame(lapply(datss, myscale))
+
+# Train-test split
+set.seed(4061)
+itrain = sample(1:n, round(.7*n), replace=FALSE)
+datss.train = datss[itrain,]
+datss.test = datss[-itrain,]
+
+# 1. Fit a single-layer FFNN using caret with decay=0.1
+set.seed(4061)
+model1 <- train(
+  Salary ~ ., 
+  data = datss.train,
+  method = "nnet",
+  tuneGrid = data.frame(decay = 0.1, size = 10),
+  linout = TRUE,
+  trace = FALSE,
+  maxit = 500
+)
+
+print(model1)
+pred1 <- predict(model1, datss.test)
+rmse1 <- sqrt(mean((pred1 - datss.test$Salary)^2))
+cat("RMSE for fixed model:", rmse1, "\n")
+
+# 2. Tune the single-layer FFNN and compare
+set.seed(4061)
+model2 <- train(
+  Salary ~ .,                   
+  data = datss.train,          
+  method = "nnet",             
+  tuneGrid = expand.grid(      # Grid of hyperparameters to try
+    decay = c(0, 0.001, 0.01, 0.1, 0.5),  # Weight decay values (regularisation)
+    size = c(5, 10, 15)        # Number of neurons in hidden layer
+  ),
+  linout = TRUE,               # Linear output activation (for regression tasks)
+  trace = FALSE,               # Suppress training details/progress output
+  maxit = 500                  # Maximum number of training iterations
+)
+
+print(model2)
+plot(model2)
+pred2 <- predict(model2, datss.test)
+rmse2 <- sqrt(mean((pred2 - datss.test$Salary)^2))
+cat("RMSE for tuned model:", rmse2, "\n")
+
+# 3. Use 3-layer FFNN with neuralnet and caret
+# neuralnet implementation
+set.seed(4061)
+nn3 <- neuralnet(
+  Salary ~ ., 
+  data = datss.train,
+  hidden = c(10, 5),
+  linear.output = TRUE
+)
+
+pred3_nn <- predict(nn3, datss.test)
+rmse3_nn <- sqrt(mean((pred3_nn - datss.test$Salary)^2))
+cat("RMSE for neuralnet 3-layer:", rmse3_nn, "\n")
+
+# caret implementation with mlp
+set.seed(4061)
+model3 <- train(
+  Salary ~ ., 
+  data = datss.train,
+  method = "mlpML",
+  tuneGrid = data.frame(size = 10),
+  trControl = trainControl(method = "cv", number = 5)
+)
+
+print(model3)
+pred3 <- predict(model3, datss.test)
+rmse3 <- sqrt(mean((pred3 - datss.test$Salary)^2))
+cat("RMSE for mlpML:", rmse3, "\n")
+
+# 4. Fine-tune with mlpML
+set.seed(4061)
+model4 <- train(
+  Salary ~ ., 
+  data = datss.train,
+  method = "mlpML",
+  tuneGrid = expand.grid(size = c(5, 10, 15, 20)),
+  trControl = trainControl(method = "cv", number = 5)
+)
+
+print(model4)
+plot(model4)
+pred4 <- predict(model4, datss.test)
+rmse4 <- sqrt(mean((pred4 - datss.test$Salary)^2))
+cat("RMSE for tuned mlpML:", rmse4, "\n")
+
+# Compare results
+results <- data.frame(
+  Model = c("nnet fixed", "nnet tuned", "neuralnet 3-layer", "mlpML", "mlpML tuned"),
+  RMSE = c(rmse1, rmse2, rmse3_nn, rmse3, rmse4)
+)
+print(results)
+
+
+
+
 ###############################################################
 ### Exercise 6: Olden index
 ###############################################################
