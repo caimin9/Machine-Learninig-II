@@ -131,106 +131,121 @@ names(nno2)
 ###############################################################
 ### Exercise 4
 ###############################################################
-
+# Clear workspace of all variables
 rm(list=ls())
 
-library(caret)
-library(neuralnet)
-library(nnet)
-library(ISLR)
+# Load required libraries
+library(caret)      # Machine learning framework with tools for model training
+library(neuralnet)  # Alternative implementation of neural networks
+library(nnet)       # Classic neural network implementation
+library(ISLR)       # Contains datasets including Hitters
 
-# set up the data (take a subset of the Hitters dataset)
-dat = na.omit(Hitters) 
-n = nrow(dat)
-NC = ncol(dat)
+# Load and prepare the Hitters baseball dataset
+dat = na.omit(Hitters)  # Remove rows with missing values
+n = nrow(dat)           # Get number of observations
+NC = ncol(dat)          # Get number of variables
 
-# Then try again after normalizing the response variable to [0,1]:
+# Create a new dataset with normalized response variable
+# Scaling Salary to [0,1] range to help neural network training
 dats = dat
-dats$Salary = (dat$Salary-min(dat$Salary)) / diff(range(dat$Salary))
+dats$Salary = (dat$Salary-min(dat$Salary)) / diff(range(dat$Salary))  # Min-max normalization
 
-# train neural net
-set.seed(4061)
-itrain = sample(1:n, round(.7*n), replace=FALSE)
-dat.train = dat[itrain,]
-dats.train = dats[itrain,]
-dat.test = dat[-itrain,]
-dats.test = dats[-itrain,]
+# Create train-test split (70% train, 30% test)
+set.seed(4061)  # Set random seed for reproducibility
+itrain = sample(1:n, round(.7*n), replace=FALSE)  # Select random 70% indices
+dat.train = dat[itrain,]      # Training set with original data
+dats.train = dats[itrain,]    # Training set with normalized response
+dat.test = dat[-itrain,]      # Test set with original data
+dats.test = dats[-itrain,]    # Test set with normalized response
 
+# First attempt: Neural network with unscaled data and regularization
 set.seed(4061)
-nno = nnet(Salary~., data=dat.train, size=10, decay=c(0.1))
-summary(nno$fitted.values)
+nno = nnet(Salary~., data=dat.train, size=10, decay=c(0.1))  
+# size=10: 10 hidden neurons
+# decay=0.1: Weight decay parameter (L2 regularization)
+summary(nno$fitted.values)  # View summary of predicted values
 
+# Second attempt: Neural network with normalized response and no regularization
 set.seed(4061)
-# 0 decay means no regularisation. As decay increases so does regularisation
-nno.s = nnet(Salary~., data=dats.train, size=10, decay=c(0))
+nno.s = nnet(Salary~., data=dats.train, size=10, decay=c(0))  # decay=0 means no regularization
 summary(nno.s$fitted.values)
 
+# Third attempt: Neural network with normalized response and regularization
 set.seed(4061)
 nno.s = nnet(Salary~., data=dats.train, size=10, decay=c(0.1))
 summary(nno.s$fitted.values)
 
-# Our last attempt above was a success.
-# But we should be able to get a proper fit even for decay=0... 
-# what's going on? Can you get it to work?
+# Note about issue: Need to specify output layer type for regression
+# The missing parameter was linout, which needs to be TRUE for regression
 
-# (A1) Well, it's one of these small details in how you call a function;
-# here we have to specify 'linout=1' because we are considering a 
-# regression problem:
-
+# Fourth attempt: Adding linout=1 parameter for regression problems
 set.seed(4061)
-nno = nnet(Salary~., data=dat.train, size=10, decay=c(0.1), linout=1)
+nno = nnet(Salary~., data=dat.train, size=10, decay=c(0.1), linout=1)  
+# linout=1: Use linear output neurons instead of sigmoid (essential for regression)
 summary(nno$fitted.values)
 
+# Fifth attempt: Normalized response, no regularization, with linear output
 set.seed(4061)
 nno.s = nnet(Salary~., data=dats.train, size=10, decay=c(0), linout=1)
 summary(nno.s$fitted.values)
 
+# Sixth attempt: Normalized response, with regularization, with linear output
 set.seed(4061)
 nno.s = nnet(Salary~., data=dats.train, size=10, decay=c(0.1), linout=1)
 summary(nno.s$fitted.values)
 
-# (A2) but let's do the whole thing again more cleanly...
+# More comprehensive data preprocessing approach
+# Creating functions for standardizing the preprocessing
 
-# re-encode and scale dataset properly
+# Function to convert factor variables to numeric
 myrecode <- function(x){
-# function recoding levels into numerical values
+# Convert categorical variables to numerical without losing information
 	if(is.factor(x)){
-		levels(x)
-		return(as.numeric(x)) 
+		levels(x)  # Check the levels (not used, just for information)
+		return(as.numeric(x))  # Convert factors to their integer codes
 	} else {
-		return(x)
+		return(x)  # Return non-factors unchanged
 	}
 }
-myscale <- function(x){
-# function applying normalization to [0,1] scale
-	minx = min(x,na.rm=TRUE)
-	maxx = max(x,na.rm=TRUE)
-	return((x-minx)/(maxx-minx))
-}
-datss = data.frame(lapply(dat,myrecode))
-datss = data.frame(lapply(datss,myscale))
 
-# replicate same train-test split:
+# Function to scale variables to [0,1] range
+myscale <- function(x){
+# Min-max normalization to standardize range
+	minx = min(x,na.rm=TRUE)  # Find minimum, ignoring NA values
+	maxx = max(x,na.rm=TRUE)  # Find maximum, ignoring NA values
+	return((x-minx)/(maxx-minx))  # Scale to [0,1] range
+}
+
+# Apply both conversion functions to entire dataset
+# Process each column with lapply and convert back to data frame
+datss = data.frame(lapply(dat,myrecode))  # First convert factors to numeric
+datss = data.frame(lapply(datss,myscale))  # Then scale all values to [0,1]
+
+# Use same train-test split as before, but with fully preprocessed data
 datss.train = datss[itrain,]
 datss.test = datss[-itrain,]
 
+# Test fully preprocessed data with no regularization
 set.seed(4061)
 nno.ss.check = nnet(Salary~., data=datss.train, size=10, decay=0, linout=1)
 summary(nno.ss.check$fitted.values)
 
-# use same scaled data but with decay as before:
+# Test fully preprocessed data with regularization
 set.seed(4061)
 nno.ss = nnet(Salary~., data=datss.train, size=10, decay=c(0.1), linout=1)
 summary(nno.ss$fitted.values)
 
-# evaluate on test data (with same decay for both models):
+# Evaluate models on test data
+# First check if test sets have same values (debugging check)
 datss.test$Salary - dats.test$Salary
-pred.s = predict(nno.s, newdata=dats.test)
-pred.ss = predict(nno.ss, newdata=datss.test)
-mean((dats.test$Salary-pred.s)^2)
-mean((datss.test$Salary-pred.ss)^2)
 
+# Make predictions with both models
+pred.s = predict(nno.s, newdata=dats.test)  # Predict using partially preprocessed model
+pred.ss = predict(nno.ss, newdata=datss.test)  # Predict using fully preprocessed model
 
+# Calculate mean squared error for both approaches
+mean((dats.test$Salary-pred.s)^2)  # MSE for partially preprocessed model
+mean((datss.test$Salary-pred.ss)^2)  # MSE for fully preprocessed model
 
 ###############################################################
 ### Exercise 5: neural networks using caret
